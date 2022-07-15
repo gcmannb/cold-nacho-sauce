@@ -1,0 +1,30 @@
+#!/bin/bash
+PROJECT=$(basename $(pwd))
+export PROJECT
+
+makefile=$HOME/source/nacho-sauce/Makefile
+
+# Run the target with the project prefix if available; otherwise,
+# fallback to some generic target
+
+if [[ $1 == "--" ]]; then
+	make -f ${makefile} $*
+	exit $?
+fi
+
+# Targets that should always run.  Pre-flight checks will quickly look for common
+# problems without needing to run `doctor`
+if [[ "$1" == "help" ]]; then
+	implied_targets=
+else
+	implied_targets=-preflight-checks
+fi
+
+target=${PROJECT}/$*
+
+# Run project-specific target if it is available
+if ! VERBOSE= DRY_RUN= make -f ${makefile} list | grep -q "^${PROJECT}/${1}"; then
+	target=$*
+fi
+
+make --warn-undefined-variables -f ${makefile} -- ${implied_targets} ${target}

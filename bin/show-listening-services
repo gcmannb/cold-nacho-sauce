@@ -1,0 +1,44 @@
+#!/bin/bash
+
+parse_and_query_compose(){
+    # Given a compose file, convert it to JSON so that JQ can be used to
+    # get the services and their ports
+    compose_json | services_and_ports
+}
+
+compose_json(){
+    python - <<PYTHON
+import sys
+from os import path
+
+try:
+    import json
+    import yaml
+except:
+    sys.stderr.write("warning: query cannot run without Python required modules\n")
+    sys.exit(0)
+
+if path.exists("docker-compose.yml"):
+    with open("docker-compose.yml", "r") as f:
+        json.dump(yaml.load(f, Loader=yaml.SafeLoader), sys.stdout)
+
+PYTHON
+}
+
+services_and_ports() {
+    jq -r '.services
+        | to_entries
+        | map(select(.value.ports))  # exclude services with no port bindings
+        | .[]
+        | { key, port: .value.ports[0] | split(":")[1] }
+        | "\(.key) \(.port)"
+        '
+}
+
+while IFS=$'\r\n' read -r LINE; do
+    ITEMS=($LINE)
+    service=${ITEMS[0]}
+    port=${ITEMS[1]}
+
+    echo "${service} is listening on $(docker-compose port ${service} ${port})"
+done < <(parse_and_query_compose)

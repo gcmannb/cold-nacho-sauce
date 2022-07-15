@@ -1,0 +1,31 @@
+#!/bin/bash
+
+parse_and_query_compose(){
+    # Given a kustomization file, convert it to JSON so that JQ can be used to
+    # get the generator commands it contains
+    kustomization_json | generator_commands | xargs -n1 -I{} -- echo {}
+}
+
+kustomization_json(){
+    ${PYTHON} - <<PYTHON
+import yaml
+import json
+import sys
+
+with open("config/deploy/base/kustomization.yaml", "r") as f:
+    json.dump(yaml.load(f), sys.stdout)
+PYTHON
+}
+
+generator_commands() {
+    jq '.secretGenerator[].commands
+        | to_entries[]
+        | .value
+        '
+}
+
+while IFS=$'\r\n' read -r LINE; do
+
+	# TODO Actually invoke??
+    printf "%s\n" "${LINE}"
+done < <(parse_and_query_compose)

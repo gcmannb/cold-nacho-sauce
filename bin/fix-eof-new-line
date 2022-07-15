@@ -1,0 +1,19 @@
+#!/bin/bash
+
+fix_eof_new_line() {
+    local f=$1  # file name
+
+    tail -c1 < "$f" | read -r _ || echo >> "$f";
+}
+
+# TODO Fix long file list errors
+# while IFS= read -rd '' f; do tail -c1 < "$f" | read -r _ || echo >> "$f"; done
+
+for file in $@; do
+    if [ -f "$file" ]; then
+		echo >&2 "fix: $file"
+        fix_eof_new_line "$file"
+    else
+        echo >&2 "warning: file not found $file"
+    fi
+done

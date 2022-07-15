@@ -1,0 +1,21 @@
+#!/bin/bash
+
+#
+# usage: update-sources-helper [REPO_DIR]
+#
+# Switch to default branch and update source code
+#
+
+set -e
+
+REPO_DIR=$1
+repo_flag=""
+
+if [[ -n "$REPO_DIR" ]]; then
+    repo_flag="-C $REPO_DIR"
+fi
+
+default_branch=$(git $repo_flag remote show origin | grep "HEAD branch" | sed 's/.*: //')
+
+git $repo_flag checkout "$default_branch" >/dev/null 2>/dev/null
+git $repo_flag pull --ff-only >/dev/null

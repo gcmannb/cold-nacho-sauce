@@ -1,0 +1,13 @@
+#!/bin/bash
+
+service=tree
+cluster=local
+
+for environment in greek
+do
+  echo $environment
+  param_prefix=/k8s/$cluster/$environment/$service
+
+  echo aws ssm put-parameter --overwrite --key-id alias/$cluster --type "SecureString" \
+    --name $param_prefix/$name --value file://$file_source
+done

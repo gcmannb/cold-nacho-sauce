@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# gcmannb idiosyncrasy:
+#
+# Local nuc user and LDAP user could have different UIDs which makes permissions
+# not work transparently inside the container
+
+_RED="\x1b[31m"
+_RESET="\x1b[0m"
+
+# Project_name: .ssh directory is a mounted volume, so it is OK to have inconsistent access
+
+IGNORE_FILE_PERMISSIONS=(".ssh")
+
+files_with_problems(){
+    ignore_files="$(IFS="|"; echo "${IGNORE_FILE_PERMISSIONS[*]}")"
+    find . \! -user ${USER} | grep -vE "(${ignore_files})"
+}
+
+if files_with_problems > /dev/null; then
+    printf >&2 "${_RED}warning${_RESET}: some files aren't owned by ${USER}\n"
+
+    [[ -n "${VERBOSE}" ]] && {
+        files_with_problems | awk 'NR>20{ print "..."; exit } 1' >&2
+    }
+fi
